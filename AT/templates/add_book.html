@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_filters %}
+{% block title %}添加产品{% endblock %}
+
+{% block MainText %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-book-plus me-2"></i>添加产品</h4>
+                </div>
+                <div class="card-body p-4">
+                    {% if add_book %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        {{ add_book.Txt }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data" id="addBookForm">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">产品图片 <span class="text-danger">*</span></label>
+
+                            <!-- 粘贴上传区域 -->
+                            <div id="pasteArea" class="border border-2 border-dashed rounded p-4 text-center mb-2" style="cursor: pointer; background-color: #f8f9fa;">
+                                <i class="bi bi-clipboard-plus" style="font-size: 2rem; color: #6c757d;"></i>
+                                <p class="mb-1 mt-2"><strong>在此区域粘贴图片（Ctrl+V）</strong></p>
+                                <p class="text-muted small mb-0">或点击下方选择文件上传</p>
+                                <img id="preview" class="mt-3" style="max-width: 100%; max-height: 300px; display: none;" alt="预览图">
+                                <div id="uploadMsg" class="mt-2 text-info"></div>
+                            </div>
+
+                            <input class="form-control" type="file" id="image" name="image" accept="image/*" required>
+                            <input type="hidden" id="pastedImagePath" name="pasted_image_path">
+                            <div class="form-text">支持 jpg、jpeg、png 格式，可直接粘贴截图或复制的图片</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="code" class="form-label">产品编码 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="code" name="code" required>
+                            <div class="form-text">编码必须唯一</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">产品名称</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="可选填">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cost" class="form-label">产品成本 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="cost" name="cost" step="0.01" min="0" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="supplier" class="form-label">产品供应商 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select class="form-select" id="supplier" name="supplier" required>
+                                    <option value="">请选择供应商</option>
+                                    {% for s in suppliers %}
+                                    <option value="{{ s.id }}" data-name="{{ s.name }}" data-postage="{{ s.postage }}">{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" class="form-control" id="supplierSearch" placeholder="搜索供应商..." aria-label="搜索供应商">
+                            </div>
+                            <div class="form-text" id="postageInfo"></div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>确认添加
+                            </button>
+                            <a href="/book_list/" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>返回列表
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    var $select = $('#supplier');
+    var $search = $('#supplierSearch');
+    var $postageInfo = $('#postageInfo');
+    var pastedImageFile = null;
+
+    function updatePostageInfo() {
+        var selectedOption = $select.find('option:selected');
+        var postage = selectedOption.data('postage');
+        if (postage !== undefined && postage !== null) {
+            $postageInfo.text('该供应商邮费：' + postage + '元');
+        } else {
+            $postageInfo.text('');
+        }
+    }
+
+    $search.on('input', function() {
+        var searchTerm = $(this).val().toLowerCase();
+        $select.find('option').each(function() {
+            var optionName = $(this).data('name') ? $(this).data('name').toLowerCase() : '';
+            var value = $(this).val();
+            if (value === '' || optionName.indexOf(searchTerm) !== -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    $select.on('change', function() {
+        updatePostageInfo();
+    });
+
+    updatePostageInfo();
+
+    // 粘贴图片上传功能
+    var $pasteArea = $('#pasteArea');
+    var $preview = $('#preview');
+    var $uploadMsg = $('#uploadMsg');
+    var $imageInput = $('#image');
+    var $pastedImagePath = $('#pastedImagePath');
+
+    // 监听整个文档的粘贴事件
+    $(document).on('paste', function(e) {
+        var items = (e.originalEvent.clipboardData || e.originalEvent.clipboardData).items;
+        var file = null;
+
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) {
+                file = items[i].getAsFile();
+                break;
+            }
+        }
+
+        if (!file) {
+            return;
+        }
+
+        // 预览图片
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $preview.attr('src', e.target.result).show();
+            $uploadMsg.text('图片已粘贴，正在上传...').removeClass('text-danger').addClass('text-info');
+        };
+        reader.readAsDataURL(file);
+
+        // 保存文件引用
+        pastedImageFile = file;
+
+        // 上传图片到后端
+        uploadPastedImage(file);
+    });
+
+    // 上传粘贴的图片
+    function uploadPastedImage(file) {
+        var formData = new FormData();
+        formData.append('image', file);
+
+        // 获取产品编码
+        var bookCode = $('#code').val();
+        if (bookCode) {
+            formData.append('book_code', bookCode);
+        }
+
+        // 获取 CSRF token
+        var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+
+        $.ajax({
+            url: '/api/paste_upload_image/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.code === 200) {
+                    $uploadMsg.text('图片上传成功！').removeClass('text-info').addClass('text-success');
+                    $pastedImagePath.val(response.data.image_url);
+
+                    // 创建一个新的 File 对象并设置到 input
+                    var dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    $imageInput[0].files = dataTransfer.files;
+
+                    // 移除 required 属性，因为已经有图片了
+                    $imageInput.removeAttr('required');
+                } else {
+                    $uploadMsg.text('上传失败：' + response.msg).removeClass('text-info').addClass('text-danger');
+                    $preview.hide();
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = '上传失败';
+                if (xhr.responseJSON && xhr.responseJSON.msg) {
+                    errorMsg = xhr.responseJSON.msg;
+                }
+                $uploadMsg.text(errorMsg).removeClass('text-info').addClass('text-danger');
+                $preview.hide();
+            }
+        });
+    }
+
+    // 点击粘贴区域时聚焦（提示用户可以粘贴）
+    $pasteArea.on('click', function() {
+        $uploadMsg.text('请按 Ctrl+V 粘贴图片').removeClass('text-danger text-success').addClass('text-info');
+    });
+
+    // 监听文件输入变化
+    $imageInput.on('change', function() {
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $preview.attr('src', e.target.result).show();
+                $uploadMsg.text('已选择文件').removeClass('text-danger').addClass('text-success');
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
+{% endblock %}

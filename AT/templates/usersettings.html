@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% block title %}账号设置{% endblock %}
+{% load static %}
+{% block MainText %}
+
+<style>
+    .settings-card {
+        transition: all 0.3s ease;
+    }
+    .settings-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+        border-left: 4px solid #0d6efd;
+        padding-left: 12px;
+        margin-bottom: 1rem;
+    }
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #dee2e6;
+        transition: border-color 0.3s;
+    }
+    .avatar-preview:hover {
+        border-color: #0d6efd;
+    }
+    .action-btn {
+        min-width: 80px;
+    }
+    .danger-zone {
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+        border: 1px solid #ffc9c9;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+    .info-zone {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+
+            <!-- 页面标题 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="mb-1"><i class="bi bi-gear-fill me-2 text-primary"></i>账号设置</h3>
+                    <p class="text-muted mb-0">管理您的个人信息和账号安全</p>
+                </div>
+                <a href="/user" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>返回
+                </a>
+            </div>
+
+            <form enctype="multipart/form-data" action="/user/settings/" method="post">
+                {% csrf_token %}
+
+                <!-- 个人信息设置 -->
+                <div class="card shadow-sm settings-card mb-4">
+                    <div class="card-body p-4">
+                        <div class="section-title">
+                            <i class="bi bi-person-circle me-2"></i>个人信息
+                        </div>
+
+                        <!-- 头像设置 -->
+                        <div class="row align-items-center mb-4 pb-4 border-bottom">
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                <img src="{% static 'avatar' %}/{{ user_list.avatar }}"
+                                     alt="avatar"
+                                     class="rounded-circle avatar-preview"
+                                     id="avatar-preview">
+                            </div>
+                            <div class="col-md-7 mb-3 mb-md-0">
+                                <label class="form-label fw-semibold mb-2">
+                                    <i class="bi bi-image me-2"></i>头像
+                                </label>
+                                <label class="btn btn-outline-primary w-100 w-md-auto">
+                                    <i class="bi bi-upload me-2"></i>
+                                    <input type="file" name="file" accept="image/*" hidden
+                                           onchange="previewAvatar(this);">
+                                    <span class="upload-text">选择图片（建议1:1比例）</span>
+                                </label>
+                                <small class="d-block text-muted mt-2">支持 JPG、PNG 格式，文件大小不超过 5MB</small>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100 action-btn"
+                                        formaction="/user/settings/ChangeAvatar/">
+                                    <i class="bi bi-check-lg me-2"></i>上传
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 昵称设置 -->
+                        <div class="row align-items-center mb-4 pb-4 border-bottom">
+                            <div class="col-md-9 mb-3 mb-md-0">
+                                <label class="form-label fw-semibold mb-2">
+                                    <i class="bi bi-person-badge me-2"></i>昵称
+                                </label>
+                                <input type="text" class="form-control" name="username"
+                                       placeholder="当前昵称：{{ user_list.nick_name }}">
+                                <small class="text-muted">2-20个字符，支持中英文、数字</small>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100 action-btn"
+                                        formaction="/user/settings/ChangeNickname/">
+                                    <i class="bi bi-check-lg me-2"></i>更改
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 签名设置 -->
+                        <div class="row align-items-center">
+                            <div class="col-md-9 mb-3 mb-md-0">
+                                <label class="form-label fw-semibold mb-2">
+                                    <i class="bi bi-chat-quote me-2"></i>个性签名
+                                </label>
+                                <input type="text" class="form-control" name="Signature"
+                                       placeholder="当前签名：{{ user_list.signature }}">
+                                <small class="text-muted">最多50个字符</small>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100 action-btn"
+                                        formaction="/user/settings/ChangeSignature/">
+                                    <i class="bi bi-check-lg me-2"></i>更改
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 安全设置 -->
+                <div class="card shadow-sm settings-card mb-4">
+                    <div class="card-body p-4">
+                        <div class="section-title">
+                            <i class="bi bi-shield-lock me-2"></i>安全设置
+                        </div>
+
+                        <div class="row align-items-center">
+                            <div class="col-md-9 mb-3 mb-md-0">
+                                <label class="form-label fw-semibold mb-2">
+                                    <i class="bi bi-key me-2"></i>登录密码
+                                </label>
+                                <p class="text-muted mb-0">定期更换密码可以提高账号安全性</p>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-warning w-100 action-btn"
+                                        data-bs-toggle="modal" data-bs-target="#pwdModal">
+                                    <i class="bi bi-pencil me-2"></i>修改
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 设备管理 -->
+                <div class="card shadow-sm settings-card mb-4">
+                    <div class="card-body p-4">
+                        <div class="section-title">
+                            <i class="bi bi-laptop me-2"></i>设备管理
+                        </div>
+
+                        <div class="info-zone">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-info w-100"
+                                            formaction="/user/settings/ClientOffline/">
+                                        <i class="bi bi-power me-2"></i>客户端下线
+                                    </button>
+                                    <small class="d-block text-muted mt-2 text-center">强制所有客户端下线</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-info w-100"
+                                            formaction="/user/settings/Resetuuid/">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>重置 UUID
+                                    </button>
+                                    <small class="d-block text-muted mt-2 text-center">重新生成设备标识</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 危险操作 -->
+                <div class="card shadow-sm settings-card border-danger">
+                    <div class="card-body p-4">
+                        <div class="section-title text-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>危险操作
+                        </div>
+
+                        <div class="danger-zone">
+                            <div class="d-flex align-items-start mb-3">
+                                <i class="bi bi-exclamation-circle-fill text-danger me-3 fs-4"></i>
+                                <div>
+                                    <h6 class="text-danger mb-1">注销账号</h6>
+                                    <p class="text-muted mb-0 small">
+                                        注销后，您的所有数据将被永久删除且无法恢复。请谨慎操作！
+                                    </p>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100"
+                                    formaction="/user/settings/PermanentlyLogout/"
+                                    onclick="return confirm('⚠️ 警告：此操作将永久删除您的账号和所有数据！\n\n确定要继续吗？');">
+                                <i class="bi bi-trash me-2"></i>我已了解风险，确认注销账号
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密码模态框 -->
+<div class="modal fade" id="pwdModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-key me-2"></i>修改密码
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/user/settings/ChangePassword/">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-lock me-2"></i>新密码
+                        </label>
+                        <input type="password" class="form-control" name="password"
+                               placeholder="请输入新密码" required>
+                        <small class="text-muted">密码长度至少6位</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-lock-fill me-2"></i>确认密码
+                        </label>
+                        <input type="password" class="form-control" name="confirm_password"
+                               placeholder="请再次输入新密码" required>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <small>修改密码后需要重新登录</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-2"></i>取消
+                    </button>
+                    <button type="submit" class="btn btn-primary"
+                            onclick="return checkPasswordMatch();">
+                        <i class="bi bi-check-lg me-2"></i>确认修改
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 提示消息模态框 -->
+{% if usersettings %}
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-bell me-2"></i>系统提示
+                </h5>
+                <a href="/user/settings" class="btn-close btn-close-white"></a>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
+                <p class="fs-5 mb-0">{{ usersettings.Txt }}</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="/user/settings" class="btn btn-primary px-4">
+                    <i class="bi bi-check-lg me-2"></i>确认
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    // 头像预览
+    function previewAvatar(input) {
+        const text = input.parentNode.querySelector('.upload-text');
+        const preview = document.getElementById('avatar-preview');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+            text.textContent = input.files[0].name;
+        } else {
+            text.textContent = '选择图片（建议1:1比例）';
+        }
+    }
+
+    // 密码匹配检查
+    function checkPasswordMatch() {
+        const pwd = document.querySelector('input[name="password"]').value;
+        const cpwd = document.querySelector('input[name="confirm_password"]').value;
+
+        if (!pwd || pwd.length < 6) {
+            alert('密码长度至少6位！');
+            return false;
+        }
+
+        if (pwd !== cpwd) {
+            alert('两次输入的密码不一致！');
+            return false;
+        }
+
+        return true;
+    }
+</script>
+{% endblock %}

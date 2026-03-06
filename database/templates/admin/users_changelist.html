@@ -1,0 +1,66 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+{% block content_title %}
+    
+    {{ block.super }}
+    <div id="online-card" style="margin-bottom:15px">
+        <h2>🟢 在线用户 <span id="online-count">0</span> 人</h2>
+        <table class="table" style="width:auto">
+            <thead>
+                <tr>
+                    <th>昵称</th>
+                    <th>账号</th>
+                    <th>上线时间</th>
+                    <th>在线时长</th>
+                </tr>
+            </thead>
+            <tbody id="online-tbody"></tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
+    <script>
+    const tbody   = document.getElementById('online-tbody');
+    const counter = document.getElementById('online-count');
+
+    function durationText(startStr) {
+        const start = new Date(startStr);
+        const diff  = Date.now() - start.getTime();
+        const sec   = Math.floor(diff / 1000);
+        if (sec < 60) return `${sec} 秒`;
+        const min = Math.floor(sec / 60);
+        if (min < 60) return `${min} 分 ${sec % 60} 秒`;
+        const hr = Math.floor(min / 60);
+        return `${hr} 时 ${min % 60} 分 ${sec % 60} 秒`;
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(protocol + '//' + window.location.host + '/ws/admin/online/');
+    ws.onmessage = e => {
+        const list = JSON.parse(e.data);
+        counter.textContent = list.length;
+        tbody.innerHTML = '';
+        list.forEach(u => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${u.nick_name}</td>
+                    <td>${u.Account}</td>
+                    <td>${u.login_at}</td>
+                    <td>${durationText(u.login_at)}</td>
+                </tr>`;
+        });
+    };
+    setInterval(() => {
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(tr => {
+            const loginCell = tr.children[2];    
+            const durationCell = tr.children[3];   
+            if (loginCell && durationCell) {
+                durationCell.textContent = durationText(loginCell.textContent);
+            }
+        });
+    }, 1000);
+    </script>
+{% endblock %}

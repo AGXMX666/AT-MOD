@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <script src="{% static 'js/popper.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <link rel="shortcut icon" href="{% static 'img/logo.png' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css' %}">
+    <style>
+        {% block style %}
+        {% endblock %}
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .MainText {
+            flex: 1;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand img {
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover img {
+            transform: scale(1.1);
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+            padding: 2rem 0;
+            margin-top: auto;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .footer h5 {
+            color: #0984e3;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" height="32" class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% block ul1 %}{% endblock %}" href="/">主页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% block ul2 %}{% endblock %}" href="/Download">下载</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% block ul4 %}{% endblock %}" href="/book_list">书籍</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% block ul5 %}{% endblock %}" href="/DeveloperDocumentation">文档</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user_list %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="{% static 'avatar' %}/{{ user_list.avatar }}" alt="avatar"
+                                class="rounded-circle me-2 navbar-header-avatar"
+                                style="width: 32px; height: 32px; object-fit: cover;">
+                            {{ user_list.nick_name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/user">个人中心</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/logout">退出登录</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    {% if request.path != '/login/' and request.path != '/register/' %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-primary btn-sm" href="/login">请先登录账号</a>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="MainText">
+        {% block MainText %}{% endblock %}
+    </div>
+
+    <footer class="footer text-center">
+        <div class="container">
+            <h5>AGXMX版权所有</h5>
+        </div>
+    </footer>
+</body>
+
+</html>

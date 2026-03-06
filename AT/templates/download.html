@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}下载{% endblock %}
+{% block ul2 %}active{% endblock %}
+
+{% block MainText %}
+<div class="container my-5">
+    {% if latest_download %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ latest_download.tile }}</h4>
+        </div>
+
+        <div class="card-body text-center">
+            <img src="{{ latest_download.image }}" alt="预览图" class="img-fluid rounded mb-3"
+                style="max-height:300px; object-fit:contain;">
+        </div>
+
+        <div class="card-body border-top">
+            <h5 class="mb-3">更新说明</h5>
+            <iframe srcdoc="{{ latest_download.text|escape }}" class="d-block w-100 rounded"
+                style="border:none; min-height:{{ latest_download.height|escape }}px;"></iframe>
+        </div>
+
+        <div class="card-footer text-center">
+            <a href="{{ latest_download.urls }}" class="btn btn-primary btn-lg px-4">
+                <i class="bi bi-download me-2"></i>下载
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <i class="bi bi-cloud-slash display-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">暂无下载链接</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}开发者文档{% endblock %}
+{% block ul5 %}active{% endblock %}
+{% block MainText %}
+<style>
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2980b9;
+        --accent-color: #e74c3c;
+        --light-color: #ecf0f1;
+        --dark-color: #2c3e50;
+        --text-color: #333;
+        --border-color: #bdc3c7;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --error-color: #e74c3c;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: #f9f9f9;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        display: block;
+    }
+
+    header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 30px 0;
+        text-align: center;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+
+    header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .api-section {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .api-section h2 {
+        color: var(--primary-color);
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .api-section h3 {
+        color: var(--secondary-color);
+        margin: 20px 0 10px;
+    }
+
+    .api-section h4 {
+        color: var(--dark-color);
+        margin: 15px 0 10px;
+    }
+
+    .endpoint {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        background-color: var(--light-color);
+        border-radius: 5px;
+    }
+
+    .method {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        margin-right: 10px;
+        min-width: 70px;
+        text-align: center;
+    }
+
+    .method.GET {
+        background-color: #61affe;
+    }
+
+    .method.POST {
+        background-color: var(--success-color);
+    }
+
+    .method.PUT {
+        background-color: var(--warning-color);
+    }
+
+    .method.DELETE {
+        background-color: var(--error-color);
+    }
+
+    .url {
+        font-family: monospace;
+        font-size: 1.1rem;
+    }
+
+    .code-block {
+        background-color: #2d2d2d;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 15px 0;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        white-space: pre-wrap;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+    }
+
+    table th,
+    table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    table th {
+        background-color: var(--light-color);
+        font-weight: 600;
+    }
+
+    .response-example {
+        background-color: #f8f9fa;
+        border-left: 4px solid var(--warning-color);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 5px 5px 0;
+    }
+
+    .language-tabs {
+        display: flex;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+
+    .language-tab {
+        padding: 8px 15px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+        color: var(--dark-color);
+        transition: all 0.3s;
+    }
+
+    .language-tab:hover {
+        color: var(--primary-color);
+    }
+
+    .language-tab.active {
+        border-bottom: 2px solid var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .code-container {
+        position: relative;
+    }
+
+    .code-content {
+        display: none;
+    }
+
+    .code-content.active {
+        display: block;
+    }
+
+    .copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: background-color 0.3s;
+    }
+
+    .copy-btn:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .note {
+        background-color: #fff8e1;
+        border-left: 4px solid var(--warning-color);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 5px 5px 0;
+    }
+
+    .warning {
+        background-color: #ffebee;
+        border-left: 4px solid var(--error-color);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 5px 5px 0;
+    }
+
+    footer {
+        text-align: center;
+        padding: 20px;
+        margin-top: 40px;
+        color: var(--dark-color);
+        border-top: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 10px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+        }
+
+        .api-section {
+            padding: 15px;
+        }
+
+        .endpoint {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .method {
+            margin-bottom: 5px;
+        }
+    }
+</style>
+<div class="container">
+    <header>
+        <h1>API接口文档</h1>
+        <p>开发者接入指南与代码示例</p>
+    </header>
+
+    {% for section in sections %}
+    <section class="api-section">
+        <h2>{{ section.title }}</h2>
+        <div>{{ section.content|safe }}</div>
+    </section>
+    {% endfor %}
+
+    {% if endpoints %}
+    <section class="api-section">
+        <h2>API接口详情</h2>
+
+        {% for endpoint in endpoints %}
+        <div style="margin-bottom: 40px;">
+            <h3>{{ forloop.counter }}. {{ endpoint.name }}</h3>
+            <div class="endpoint">
+                <span class="method {{ endpoint.method }}">{{ endpoint.method }}</span>
+                <span class="url">{{ endpoint.endpoint }}</span>
+            </div>
+
+            <p>{{ endpoint.description }}</p>
+
+            {% if endpoint.request_params %}
+            <h4>请求参数</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>参数名</th>
+                        <th>类型</th>
+                        <th>必需</th>
+                        <th>描述</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for param in endpoint.request_params|parse_json %}
+                    <tr>
+                        <td>{{ param.name }}</td>
+                        <td>{{ param.type }}</td>
+                        <td>{{ param.required|yesno:"是,否" }}</td>
+                        <td>{{ param.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+            {% if endpoint.response_success or endpoint.response_error %}
+            <h4>响应示例</h4>
+            <div class="response-example">
+                {% if endpoint.response_success %}
+                <p><strong>成功响应:</strong></p>
+                <div class="code-block">{{ endpoint.response_success }}</div>
+                {% endif %}
+
+                {% if endpoint.response_error %}
+                <p><strong>错误响应:</strong></p>
+                <div class="code-block">{{ endpoint.response_error }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if endpoint.code_python or endpoint.code_javascript or endpoint.code_java or endpoint.code_csharp or endpoint.code_go or endpoint.code_php %}
+            <h4>代码示例</h4>
+            <div class="language-tabs">
+                {% if endpoint.code_python %}<button class="language-tab active" onclick="showCode('{{ endpoint.id }}-python')">Python</button>{% endif %}
+                {% if endpoint.code_javascript %}<button class="language-tab {% if not endpoint.code_python %}active{% endif %}" onclick="showCode('{{ endpoint.id }}-javascript')">JavaScript</button>{% endif %}
+                {% if endpoint.code_java %}<button class="language-tab {% if not endpoint.code_python and not endpoint.code_javascript %}active{% endif %}" onclick="showCode('{{ endpoint.id }}-java')">Java</button>{% endif %}
+                {% if endpoint.code_csharp %}<button class="language-tab" onclick="showCode('{{ endpoint.id }}-csharp')">C#</button>{% endif %}
+                {% if endpoint.code_go %}<button class="language-tab" onclick="showCode('{{ endpoint.id }}-go')">Go</button>{% endif %}
+                {% if endpoint.code_php %}<button class="language-tab" onclick="showCode('{{ endpoint.id }}-php')">PHP</button>{% endif %}
+            </div>
+
+            <div class="code-container">
+                {% if endpoint.code_python %}
+                <div class="code-content active" id="{{ endpoint.id }}-python">
+                    <button class="copy-btn" onclick="copyCode('{{ endpoint.id }}-python')">复制</button>
+                    <div class="code-block">{{ endpoint.code_python }}</div>
+                </div>
+                {% endif %}
+
+                {% if endpoint.code_javascript %}
+                <div class="code-content {% if not endpoint.code_python %}active{% endif %}" id="{{ endpoint.id }}-javascript">
+                    <button class="copy-btn" onclick="copyCode('{{ endpoint.id }}-javascript')">复制</button>
+                    <div class="code-block">{{ endpoint.code_javascript }}</div>
+                </div>
+                {% endif %}
+
+                {% if endpoint.code_java %}
+                <div class="code-content {% if not endpoint.code_python and not endpoint.code_javascript %}active{% endif %}" id="{{ endpoint.id }}-java">
+                    <button class="copy-btn" onclick="copyCode('{{ endpoint.id }}-java')">复制</button>
+                    <div class="code-block">{{ endpoint.code_java }}</div>
+                </div>
+                {% endif %}
+
+                {% if endpoint.code_csharp %}
+                <div class="code-content" id="{{ endpoint.id }}-csharp">
+                    <button class="copy-btn" onclick="copyCode('{{ endpoint.id }}-csharp')">复制</button>
+                    <div class="code-block">{{ endpoint.code_csharp }}</div>
+                </div>
+                {% endif %}
+
+                {% if endpoint.code_go %}
+                <div class="code-content" id="{{ endpoint.id }}-go">
+                    <button class="copy-btn" onclick="copyCode('{{ endpoint.id }}-go')">复制</button>
+                    <div class="code-block">{{ endpoint.code_go }}</div>
+                </div>
+                {% endif %}
+
+                {% if endpoint.code_php %}
+                <div class="code-content" id="{{ endpoint.id }}-php">
+                    <button class="copy-btn" onclick="copyCode('{{ endpoint.id }}-php')">复制</button>
+                    <div class="code-block">{{ endpoint.code_php }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if endpoint.notes %}
+            <div class="note">
+                <p><strong>注意事项：</strong></p>
+                <p>{{ endpoint.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% else %}
+    <section class="api-section">
+        <h2>暂无API文档</h2>
+        <p>请在后台管理系统中添加API端点信息。</p>
+    </section>
+    {% endif %}
+
+    <footer>
+        <p>© 2023 API接口文档 | 如有问题请联系技术支持</p>
+    </footer>
+</div>
+
+<script>
+    function showCode(languageId) {
+        const container = document.getElementById(languageId).closest('.code-container');
+
+        container.querySelectorAll('.code-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        container.closest('.api-section').querySelectorAll('.language-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        document.getElementById(languageId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId).querySelector('.code-block');
+        const textArea = document.createElement('textarea');
+        textArea.value = codeElement.textContent;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '已复制!';
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 2000);
+    }
+</script>
+{% endblock %}

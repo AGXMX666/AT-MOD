@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_filters %}
+{% block title %}用户{% endblock %}
+{% block MainText %}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- 左侧用户信息卡片 -->
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white text-center">
+                    <img src="{% static 'avatar' %}/{{ user_list.avatar }}" alt="avatar"
+                         class="rounded-circle mb-3 border border-3 border-white"
+                         width="100" height="100" style="object-fit: cover;">
+                    <h5 class="mb-0">{{ user_list.nick_name }}</h5>
+                </div>
+
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-person-badge me-2"></i>账号</span>
+                            <strong>{{ user_list.Account }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-chat-quote me-2"></i>签名</span>
+                            <small class="text-muted">{{ user_list.signature }}</small>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-coin me-2"></i>金币</span>
+                            <span class="badge bg-warning text-dark">{{ user_list.coins }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-circle-fill me-2 {% if info.OnlinStatus == '在线' %}text-success{% else %}text-secondary{% endif %}"></i>客户端状态</span>
+                            <span class="badge {% if info.OnlinStatus == '在线' %}bg-success{% else %}bg-secondary{% endif %}">{{ info.OnlinStatus }}</span>
+                        </li>
+                        <li class="list-group-item">
+                            <small class="text-muted"><i class="bi bi-clock-history me-2"></i>最后登录</small>
+                            <div>{{ user_list.last_login|date:"Y-m-d H:i" }}</div>
+                        </li>
+                        <li class="list-group-item">
+                            <small class="text-muted"><i class="bi bi-calendar-check me-2"></i>注册时间</small>
+                            <div>{{ user_list.date_joined|date:"Y-m-d H:i" }}</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-footer bg-white">
+                    <div class="d-grid gap-2">
+                        <a href="/user/settings" class="btn btn-primary">
+                            <i class="bi bi-gear me-2"></i>账号设置
+                        </a>
+                        <a href="/logout" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i>退出登录
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧产品列表 -->
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>我的产品</h5>
+                        <a href="/add_book/" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>添加产品
+                        </a>
+                    </div>
+                    <div class="input-group">
+                        <input
+                            type="text"
+                            id="search-input"
+                            class="form-control"
+                            placeholder="搜索产品名称或编码..."
+                            value="{{ query|default:'' }}"
+                            aria-label="搜索产品">
+                        <button class="btn btn-outline-primary" type="button" id="search-btn">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        {% if query %}
+                        <button class="btn btn-outline-secondary" type="button" id="clear-search-btn">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    {% if user_books %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 80px;">图片</th>
+                                    <th>编码</th>
+                                    <th>名称</th>
+                                    <th>成本</th>
+                                    <th style="width: 100px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for book in user_books %}
+                                {% with total_cost=book.cost|add:book.supplier.postage %}
+                                <tr class="book-item">
+                                    <td>
+                                        <img
+                                             data-src="{{ book.image.url }}"
+                                             alt="{{ book.name|default:'产品图片' }}"
+                                             class="lazy-load-img rounded"
+                                             style="width:60px; height:60px; object-fit:cover;">
+                                    </td>
+                                    <td><strong>{{ book.code }}</strong></td>
+                                    <td>{{ book.name|default:"-" }}</td>
+                                    <td>
+                                        <div class="small">
+                                            <div>成本: {{ book.cost }}元</div>
+                                            <div>邮费: {{ book.supplier.postage }}元</div>
+                                            <div class="{% if total_cost > 5 %}text-danger fw-bold{% endif %}">
+                                                总计: {{ total_cost|floatformat:2 }}元
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <form action="/delete_book/{{ book.id }}/" method="POST"
+                                              onsubmit="return confirm('确定要删除这个产品吗？');" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    {% if paginator_obj.paginator.num_pages > 1 %}
+                    <nav aria-label="分页导航" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {% if not paginator_obj.has_previous %}disabled{% endif %}">
+                                <a class="page-link"
+                                   href="{% if paginator_obj.has_previous %}?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ paginator_obj.previous_page_number }}{% else %}#{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    第 {{ current_page }} / {{ total_pages }} 页
+                                </span>
+                            </li>
+
+                            <li class="page-item {% if not paginator_obj.has_next %}disabled{% endif %}">
+                                <a class="page-link"
+                                   href="{% if paginator_obj.has_next %}?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ paginator_obj.next_page_number }}{% else %}#{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                        <p class="text-muted">
+                            {% if query %}
+                                未找到匹配的产品
+                            {% else %}
+                                暂无产品，<a href="/add_book/">立即添加</a>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 图片懒加载
+    function initLazyLoad() {
+        const lazyImages = document.querySelectorAll('.lazy-load-img');
+
+        const lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const src = img.getAttribute('data-src');
+                    img.setAttribute('src', src);
+                    img.onload = function() {
+                        img.classList.remove('lazy-load-img');
+                        lazyLoadObserver.unobserve(img);
+                    };
+                    img.onerror = function() {
+                        img.setAttribute('src', "{% static 'img/logo.png' %}");
+                        lazyLoadObserver.unobserve(img);
+                    };
+                }
+            });
+        }, { rootMargin: '200px 0px' });
+
+        lazyImages.forEach(img => {
+            lazyLoadObserver.observe(img);
+        });
+    }
+
+    // 搜索功能
+    function submitSearch() {
+        const query = $('#search-input').val().trim();
+        const urlParams = new URLSearchParams();
+        if (query) {
+            urlParams.set('q', query);
+        }
+        window.location.href = `/user/?${urlParams.toString()}`;
+    }
+
+    $('#search-btn').click(submitSearch);
+    $('#search-input').keypress(function(e) {
+        if (e.which === 13) submitSearch();
+    });
+
+    $('#clear-search-btn').click(function() {
+        $('#search-input').val('');
+        window.location.href = '/user/';
+    });
+
+    if ($('.lazy-load-img').length) {
+        initLazyLoad();
+    }
+});
+</script>
+
+<style>
+.lazy-load-img {
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+</style>
+
+{% endblock %}

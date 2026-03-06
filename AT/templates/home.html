@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}主页{% endblock %}
+{% block ul1 %}active{% endblock %}
+
+{% block MainText %}
+<div class="container-fluid px-3 px-md-4 py-4">
+  {% if latest_bbs %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <iframe srcdoc="{{ latest_bbs.text|escape }}" class="d-block w-100"
+            style="border:none; min-height:{{ latest_bbs.height }}px;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+          <div class="text-center mb-4">
+            <img src="{% static 'img/logo.png' %}" alt="Logo" style="max-width: 120px;" class="mb-3">
+            <h1 class="text-primary mb-3">AT 登录接口</h1>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded">
+                <h6 class="text-muted mb-2"><i class="bi bi-server me-2"></i>服务器信息</h6>
+                <p class="mb-1"><strong>Django:</strong> {{ info.django_version }}</p>
+                <p class="mb-0"><strong>ASGI:</strong> {{ info.asgi_info }}</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded">
+                <h6 class="text-muted mb-2"><i class="bi bi-cpu me-2"></i>运行环境</h6>
+                <p class="mb-1"><strong>Python:</strong> {{ info.python_version }}</p>
+                <p class="mb-0"><strong>系统:</strong> {{ info.os }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-info border-0" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            有任何问题和建议请向 GitHub 提交
+            <a href="https://github.com/你的仓库/issues" target="_blank" class="alert-link">Issues</a>
+          </div>
+
+          <div class="text-center">
+            <p class="mb-2">感谢您的使用！</p>
+            <p class="text-muted small">AGXMX 开发</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}注册AT{% endblock %}
+{% block MainText %}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+
+            <div class="card shadow">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">AT 账号注册</h5>
+                </div>
+
+                <div class="card-body">
+                    <form action="/register/" method="post">
+                        {% csrf_token %}
+
+
+                        <div class="mb-3">
+                            <label class="form-label">账号</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" name="Account" class="form-control" placeholder="请输入账号"
+                                    maxlength="12" minlength="6" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">密码</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input type="password" name="password1" class="form-control" placeholder="密码" required>
+                            </div>
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label class="form-label">确认密码</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input type="password" name="password2" class="form-control" placeholder="确认密码"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">注册码</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+                                <input type="text" name="registrationcode" class="form-control" placeholder="请输入注册码"
+                                    required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">图形验证码</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-image-fill"></i></span>
+                                <input type="text" name="captcha_1" class="form-control" placeholder="请输入图形验证码"
+                                    required>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="refreshCaptcha()">
+                                    <img id="captcha-img" src="/captcha/image/{{ captcha_0 }}/" alt="captcha"
+                                        style="height:24px;">
+                                </button>
+                            </div>
+                            {% if captcha_error %}
+                            <div class="text-danger small">{{ captcha_error }}</div>
+                            {% endif %}
+                        </div>
+
+                        <input type="hidden" name="captcha_0" value="{{ captcha_0 }}">
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">注册</button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <a href="/login/" class="text-decoration-none me-2">已有账号？去登录</a>
+                            <span class="text-muted">|</span>
+                            <a href="/home" class="text-decoration-none ms-2">进入首页</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if register %}
+<div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">提示</h5>
+                <a href="/register/" class="btn-close"></a>
+            </div>
+            <div class="modal-body text-center">
+                {{ register.Txt }}
+            </div>
+            <div class="modal-footer">
+                <a href="/login/" class="btn btn-primary btn-sm" style="display:{{ register.SignIn }};">登录账号</a>
+                <a href="/register/" class="btn btn-secondary btn-sm" style="display:{{ register.SignUp }};">注册账号</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<script>
+    function refreshCaptcha() {
+        fetch('/refresh_captcha/')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('captcha-img').src = data.image_url;
+                document.querySelector('input[name="captcha_0"]').value = data.hashkey;
+            })
+            .catch(() => alert('验证码刷新失败'));
+    }
+</script>
+{% endblock %}
