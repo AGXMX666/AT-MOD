@@ -8,3 +8,8 @@ channels==4.2.2
 Pillow>=11.0
 tzdata
 pytz
+requests
+websocket
+tqdm
+urllib3
+pycryptodome

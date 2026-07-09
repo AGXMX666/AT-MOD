@@ -26,14 +26,11 @@ urlpatterns = [
     path('api_v3/function_info_api_v3/',main.function_info_api_v3),
     path('api_v3/bulletinboard_api_v3/', main.bulletinboard_api_v3),
     path('api_v3/upload_logfile_api_v3/', main.upload_file_api_v3),
+    path('api_v3/GetAvatar_api_v3/', main.GetAvatar_api_v3),
     path('captcha/', include('captcha.urls')),
     path('refresh_captcha/', main.refresh_captcha),
     path('DeveloperDocumentation/', main.DeveloperDocumentation),
     path('Download/', main.Download),
-    path('book_list/', main.book_list),
-    path('add_book/', main.add_book),
-    path('delete_book/<int:book_id>/', main.delete_book),
-    path('api/paste_upload_image/', main.paste_upload_image),
 
 
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

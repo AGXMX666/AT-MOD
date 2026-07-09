@@ -259,68 +259,6 @@ class UploadFile(models.Model):
         ordering = ['-upload_time']
 
 
-class Supplier(models.Model):
-    """供应商模型"""
-    name = models.CharField(max_length=200, unique=True, verbose_name='供应商名称')
-    postage = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='邮费')
-    contact = models.CharField(max_length=100, verbose_name='联系方式', blank=True)
-    is_active = models.BooleanField(default=True, verbose_name='是否启用')
-    created_time = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "supplier"
-        managed = True
-        verbose_name = '供应商'
-        verbose_name_plural = verbose_name
-        ordering = ['name']
-
-
-class Book(models.Model):
-    """产品模型"""
-    image = models.ImageField(
-        upload_to='static/uploads/books/%Y%m%d/',
-        verbose_name='产品图片',
-        blank=True,
-        null=True,
-        default='static/img/logo.png'
-    )
-    code = models.CharField(max_length=50, unique=True, verbose_name='产品编码', db_index=True)
-    name = models.CharField(max_length=200, blank=True, null=True, verbose_name='产品名称')
-    cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='产品成本')
-    supplier = models.ForeignKey(
-        'Supplier',
-        on_delete=models.CASCADE,
-        related_name='books',
-        verbose_name='产品供应商'
-    )
-    shelf_time = models.DateTimeField(default=timezone.now, verbose_name='上架时间')
-    is_display = models.BooleanField(default=True, verbose_name='是否显示')
-    user = models.ForeignKey(
-        'Users',
-        on_delete=models.CASCADE,
-        related_name='books',
-        verbose_name='上传用户',
-        null=True,
-        blank=True
-    )
-
-    def __str__(self):
-        return self.code if self.code else '未命名'
-
-    @property
-    def total_cost(self):
-        """计算总成本（成本+邮费）"""
-        return self.cost + self.supplier.postage
-
-    class Meta:
-        db_table = "book"
-        managed = True
-        verbose_name = '产品'
-        verbose_name_plural = verbose_name
-        ordering = ['-shelf_time']
 
 
 class UserConsumer(WebsocketConsumer):

@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.urls import path
 from import_export.admin import ImportExportModelAdmin
 from .models import *
-from .resources import RegistrationCodeResource, BookResource
+from .resources import RegistrationCodeResource
 from django.utils.html import format_html
 from datetime import datetime
 from django.contrib import messages
@@ -104,23 +104,6 @@ class UploadFileAdmin(admin.ModelAdmin):
     list_display = ('file', 'upload_time', 'Account','FileType')
     search_fields = ('Account','file')
 
-@admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
-    list_display = ('name', 'postage')
-    search_fields = ('name',)
-
-@admin.register(Book)
-class BookAdmin(ImportExportModelAdmin):
-    resource_class = BookResource
-    list_display = ('code', 'name', 'cost', 'supplier', 'shelf_time', 'is_display')
-    list_filter = ('is_display', 'shelf_time', 'supplier')
-    search_fields = ('code', 'name', 'supplier__name')
-    list_editable = ('is_display',)
-
-    def get_import_data_kwargs(self, request, *args, **kwargs):
-        kwargs = super().get_import_data_kwargs(request, *args, **kwargs)
-        kwargs['user'] = request.user
-        return kwargs
 
 @admin.register(APIDocSection)
 class APIDocSectionAdmin(admin.ModelAdmin):
