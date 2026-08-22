@@ -1,4 +1,5 @@
 {
-    "api_url": "127.0.0.1:8000",
-    "use_https": false
+    "api_url": "at.agxmx.top",
+    "use_https": true,
+    "SECRET_KEY": "django-insecure-_8)f@=g5+%vz8!j@9%cae!2(=__!a5$53a0e=x-(c_8suo$xby"
   }

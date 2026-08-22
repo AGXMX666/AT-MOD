@@ -1,6 +1,7 @@
 import os
 import mimetypes
 from django.contrib import admin
+from django.contrib.staticfiles import finders
 from django.urls import path, re_path, include
 from . import views as main
 from django.conf import settings
@@ -8,12 +9,25 @@ from django.http import FileResponse, HttpResponseNotFound
 
 
 def safe_static_serve(request, path, document_roots):
-    """静态文件服务视图：不受 DEBUG 开关限制，按顺序在多个根目录中查找"""
+    """静态文件服务视图：不受 DEBUG 开关限制，按顺序在多个根目录与查找器中查找"""
+    path = path.replace('\\', '/')
+    candidates = []
     for root in document_roots:
         root = os.path.abspath(root)
-        full_path = os.path.normpath(os.path.join(root, path.replace('\\', '/')))
-        if not full_path.startswith(os.path.normpath(root) + os.sep):
-            continue
+        full_path = os.path.normpath(os.path.join(root, path))
+        if full_path.startswith(os.path.normpath(root) + os.sep):
+            candidates.append(full_path)
+
+    # 兜底：使用 Django 静态文件查找器定位应用包内的静态目录
+    # （如 SimpleUI 的 /static/admin/simpleui-x/，无需 collectstatic）
+    try:
+        found = finders.find(path)
+    except Exception:
+        found = None
+    if found:
+        candidates.append(os.path.abspath(found))
+
+    for full_path in candidates:
         if os.path.isfile(full_path):
             content_type, _ = mimetypes.guess_type(full_path)
             response = FileResponse(
@@ -56,7 +70,8 @@ urlpatterns = [
 
 # 静态文件服务：无论 DEBUG 开关均可使用
 # 查找顺序：先 STATIC_ROOT（collectstatic 收集产物，含 admin/simpleui），
-# 再 static/ 源目录（css/js/img 及运行时上传的 avatar/uploads）
+# 再 static/ 源目录（css/js/img 及运行时上传的 avatar/uploads），
+# 最后回退到 Django 静态查找器（应用包内的静态目录，如 SimpleUI）
 STATIC_ROOTS = [settings.STATIC_ROOT] + settings.STATICFILES_DIRS
 
 urlpatterns += [

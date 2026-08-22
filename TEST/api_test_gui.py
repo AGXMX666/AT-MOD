@@ -21,11 +21,12 @@ import time
 urllib3.disable_warnings()
 
 
-api_url = "127.0.0.1:8000"
+# 以下配置变量统一由 config.json 提供，不再硬编码默认值
+api_url = ""
 use_https = True
-protocol = "http"
-ws_protocol = "ws"
-SECRET_KEY = 'django-insecure-_8)f@=g5+%vz8!j@9%cae!2(=__!a5$53a0e=x-(c_8suo$xby'
+protocol = ""
+ws_protocol = ""
+SECRET_KEY = ""
 
 login_url = ""
 info_url = ""
@@ -35,8 +36,9 @@ upload_url = ""
 avatar_url = ""
 
 
-def generate_signature(data: dict, secret_key: str = SECRET_KEY) -> str:
-    """生成请求签名（与服务端完全一致）"""
+def generate_signature(data: dict, secret_key: str = None) -> str:
+    """生成请求签名（密钥来自 config.json）"""
+    secret_key = secret_key or SECRET_KEY
     filtered_data = {k: v for k, v in data.items() if v is not None}
     sorted_data = sorted(filtered_data.items())
     sign_str = '&'.join([f'{k}={v}' for k, v in sorted_data])
@@ -58,16 +60,21 @@ def generate_nonce(length: int = 16) -> str:
 
 
 def load_config():
-    """加载配置文件"""
-    global api_url, use_https, protocol, ws_protocol
+    """加载配置文件（所有配置项均来自 config.json）"""
+    global api_url, use_https, protocol, ws_protocol, SECRET_KEY
     global login_url, info_url, user_url, bulletin_url, upload_url, avatar_url
     
     try:
         with open("config.json", "r", encoding="utf-8") as f:
             config = json.load(f)
         
-        api_url = config.get("api_url", "127.0.0.1:8000")
-        use_https = config.get("use_https", True)
+        api_url = str(config.get("api_url", "")).strip()
+        if not api_url:
+            return False, "config.json 缺少 api_url"
+        use_https = bool(config.get("use_https", True))
+        SECRET_KEY = str(config.get("SECRET_KEY", ""))
+        if not SECRET_KEY:
+            return False, "config.json 缺少 SECRET_KEY"
         protocol = "https" if use_https else "http"
         ws_protocol = "wss" if use_https else "ws"
         

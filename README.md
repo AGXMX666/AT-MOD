@@ -85,7 +85,8 @@ AT登录接口平台是一个基于Django开发的用户登录与管理系统，
 
 10. **关于静态资源与关闭 DEBUG**
     - 项目内置静态文件服务，关闭 `DEBUG` 后前端页面（css/js/img）与运行时上传文件（头像、日志）仍可正常访问，无需 nginx。
-    - 后台管理界面（admin/SimpleUI）的样式文件需先执行 `python manage.py collectstatic` 收集到 `resources/` 目录后才能显示。
+    - 后台管理界面（admin/SimpleUI）的样式文件会自动从应用安装包内加载，无需 `collectstatic` 也能正常显示。
+    - 生产环境仍建议执行 `python manage.py collectstatic` 将静态文件收集到 `resources/` 目录，提升加载性能。
     
 ## 推荐使用虚拟环境（venv）部署
 
@@ -143,9 +144,10 @@ AT登录接口平台是一个基于Django开发的用户登录与管理系统，
       - 网页登录与注册移除 CSRF 豁免，图形验证码校验后立即销毁。
       - `SECRET_KEY` 与 API 签名密钥支持环境变量注入，`DEBUG` 由环境变量控制，登录日志不再输出明文密码。
    - **部署改进**：
-      - 新增独立静态文件服务：关闭 `DEBUG` 后前端与后台静态资源不再丢失。
+      - 新增独立静态文件服务：关闭 `DEBUG` 后前端与后台静态资源不再丢失，并回退到应用包查找器，admin/SimpleUI 样式无需 `collectstatic` 也能显示。
       - `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE` 支持环境变量覆盖，本地 http 环境关闭 DEBUG 也能正常登录。
       - `start.bat` 默认以关闭 DEBUG 模式启动。
+      - API 测试工具（`TEST/api_test_gui.py`）配置全部迁移至 `TEST/config.json`（含 `api_url`、`use_https`、`SECRET_KEY`），代码不再硬编码。
 
 - **2026-07-10**
    - **移除冗余功能**：删除了产品列表（product list）相关模块，精简系统架构，降低维护成本。
