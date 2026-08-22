@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 class RegistrationCodeResource(resources.ModelResource):
     class Meta:
         model = registrationcode
-        fields = ('codes', 'user', 'Status', 'time')
+        fields = ('codes', 'user', 'is_used', 'used_time')
         import_id_fields = ['codes']
         skip_unchanged = True
 

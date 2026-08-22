@@ -90,15 +90,23 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ASGI_APPLICATION = 'AT.asgi.application'
 
-SECRET_KEY = 'django-insecure-_8)f@=g5+%vz8!j@9%cae!2(=__!a5$53a0e=x-(c_8suo$xby'
-DEBUG = True 
+# SECRET_KEY 通过环境变量注入；默认值仅供本地开发（DEBUG=True）使用
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-_8)f@=g5+%vz8!j@9%cae!2(=__!a5$53a0e=x-(c_8suo$xby'
+)
+# API 签名共享密钥：生产环境务必用环境变量单独设置，与 SECRET_KEY 分离
+API_SECRET_KEY = os.environ.get('API_SECRET_KEY', SECRET_KEY)
+
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').strip().lower() in ('1', 'true', 'yes', 'on')
 ALLOWED_HOSTS = ['at.agxmx.cn','127.0.0.1',]
 CSRF_TRUSTED_ORIGINS = ['https://at.agxmx.cn','http://127.0.0.1:8000',]
-TEMPLATE_DEBUG = True
-SESSION_COOKIE_SECURE = True 
+TEMPLATE_DEBUG = DEBUG
+SESSION_COOKIE_SECURE = os.environ.get('DJANGO_SESSION_COOKIE_SECURE', str(not DEBUG)).strip().lower() in ('1', 'true', 'yes', 'on')
 SESSION_COOKIE_HTTPONLY = True
-SECURE_CONTENT_TYPE_NOSNIFF = False
-DEBUG_PAGE_OFF=False
+CSRF_COOKIE_SECURE = os.environ.get('DJANGO_CSRF_COOKIE_SECURE', str(not DEBUG)).strip().lower() in ('1', 'true', 'yes', 'on')
+SECURE_CONTENT_TYPE_NOSNIFF = True
+DEBUG_PAGE_OFF = False
 
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024 
 UPLOAD_OPTIME=60

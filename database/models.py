@@ -1,8 +1,11 @@
 from django.db import models
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.conf import settings
+from django.contrib.auth.hashers import make_password, check_password
 import uuid
+import hashlib
+import secrets
 from channels.generic.websocket import WebsocketConsumer
 import json
 import random
@@ -29,7 +32,7 @@ class Users(models.Model):
         default=generate_default_nickname,
         verbose_name='昵称'
     )
-    password = models.CharField(max_length=100, verbose_name='密码')
+    password = models.CharField(max_length=128, verbose_name='密码')
     avatar = models.CharField(max_length=200, default='default/default.png', verbose_name='头像')
     signature = models.CharField(max_length=60, default='这是新的一天', verbose_name='签名')
     UniqueIdentification = models.CharField(
@@ -61,6 +64,22 @@ class Users(models.Model):
         if not self.nick_name:
             self.nick_name = generate_default_nickname()
         super().save(*args, **kwargs)
+
+    def check_password(self, raw_password: str) -> bool:
+        """校验密码；兼容旧版明文密码，校验通过后自动升级为哈希存储"""
+        if not raw_password:
+            return False
+        if self.password and '$' in self.password:
+            return check_password(raw_password, self.password)
+        if self.password == raw_password:
+            self.set_password(raw_password)
+            return True
+        return False
+
+    def set_password(self, raw_password: str):
+        """设置密码（哈希存储）"""
+        self.password = make_password(raw_password)
+        self.save(update_fields=['password'])
 
     def _kick_sync(self, uid: str) -> bool:
         """同步踢出用户"""
@@ -351,3 +370,56 @@ class APIDocSection(models.Model):
         verbose_name = 'API文档章节'
         verbose_name_plural = verbose_name
         ordering = ['order', 'id']
+
+
+class ApiSessionToken(models.Model):
+    """API 会话令牌模型（数据库仅存哈希，不存原始令牌）"""
+    user = models.ForeignKey(
+        Users,
+        on_delete=models.CASCADE,
+        related_name='api_tokens',
+        verbose_name='用户',
+        db_index=True
+    )
+    token_hash = models.CharField(max_length=64, unique=True, verbose_name='令牌哈希')
+    created_time = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
+    expires_time = models.DateTimeField(verbose_name='过期时间', db_index=True)
+
+    def __str__(self):
+        return f"{self.user.Account} - {self.created_time:%Y-%m-%d %H:%M:%S}"
+
+    class Meta:
+        db_table = "api_session_token"
+        managed = True
+        verbose_name = 'API会话令牌'
+        verbose_name_plural = verbose_name
+
+    @staticmethod
+    def hash_token(raw_token: str) -> str:
+        return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+
+    @classmethod
+    def issue(cls, user: Users, ttl_seconds: int = 3600) -> str:
+        """签发会话令牌，返回原始令牌；清理该用户已过期的令牌"""
+        cls.objects.filter(user=user, expires_time__lt=timezone.now()).delete()
+        raw_token = secrets.token_hex(32)
+        cls.objects.create(
+            user=user,
+            token_hash=cls.hash_token(raw_token),
+            expires_time=timezone.now() + timedelta(seconds=ttl_seconds),
+        )
+        return raw_token
+
+    @classmethod
+    def verify(cls, user: Users, raw_token: str) -> bool:
+        """校验会话令牌是否有效且属于该用户"""
+        if not raw_token:
+            return False
+        try:
+            token = cls.objects.get(user=user, token_hash=cls.hash_token(raw_token))
+        except cls.DoesNotExist:
+            return False
+        if timezone.now() > token.expires_time:
+            token.delete()
+            return False
+        return True

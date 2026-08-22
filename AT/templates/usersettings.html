@@ -237,8 +237,8 @@
                             <i class="bi bi-lock me-2"></i>新密码
                         </label>
                         <input type="password" class="form-control" name="password"
-                               placeholder="请输入新密码" required>
-                        <small class="text-muted">密码长度至少6位</small>
+                               placeholder="请输入新密码" minlength="8" required>
+                        <small class="text-muted">密码长度至少8位</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
@@ -278,7 +278,7 @@
                 <a href="/user/settings" class="btn-close btn-close-white"></a>
             </div>
             <div class="modal-body text-center py-4">
-                <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
+                <i class="bi {{ usersettings.status1 }} text-{{ usersettings.status2 }} fs-1 mb-3 d-block"></i>
                 <p class="fs-5 mb-0">{{ usersettings.Txt }}</p>
             </div>
             <div class="modal-footer justify-content-center">
@@ -314,8 +314,8 @@
         const pwd = document.querySelector('input[name="password"]').value;
         const cpwd = document.querySelector('input[name="confirm_password"]').value;
 
-        if (!pwd || pwd.length < 6) {
-            alert('密码长度至少6位！');
+        if (!pwd || pwd.length < 8) {
+            alert('密码长度至少8位！');
             return false;
         }
 

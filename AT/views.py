@@ -3,8 +3,10 @@ from django.http import HttpResponse,JsonResponse ,HttpResponseRedirect
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import auth
+from django.contrib.auth.hashers import make_password
 from database import models as database
 import os
+import re
 import time
 import  uuid
 from datetime import datetime,timedelta
@@ -149,10 +151,10 @@ def ChangeNickname(request):
     if request.method == "POST":
         username = request.POST.get("username")
         if not username:
-            usersettings = {"TxtHide":"block","Txt":"请输入新的昵称再更改！"}
+            usersettings = {"TxtHide":"block","Txt":"请输入新的昵称再更改", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
             return render(request, "usersettings.html", {"usersettings": usersettings,"user_list":user_list})
         database.users.objects.filter(Account=request.session['Account']).update(nick_name=username)
-        usersettings = {"TxtHide":"block","Txt":"更改完成！"}
+        usersettings = {"TxtHide":"block","Txt":"更改完成！", "status2": "success", "status1": "bi-check-circle-fill"}
         OperationLog(
             Account=Account,
             uuid=database.users.objects.get(Account=Account).UniqueIdentification,
@@ -185,10 +187,10 @@ def ClientOffline(request):
                 'payload': {'is_online': False, **info},
             }
         )
-        usersettings = {"TxtHide": "block", "Txt": "已将客户端踢下线！"}
+        usersettings = {"TxtHide": "block", "Txt": "已将客户端踢下线！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
         return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user})
     else:
-        usersettings = {"TxtHide": "block", "Txt": "用户不在线！"}
+        usersettings = {"TxtHide": "block", "Txt": "用户不在线！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
         return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user})
 
     
@@ -207,11 +209,21 @@ def ChangePassword(request):
             user_list = None
     if request.method == "POST":
         key = request.POST.get("password")
+        confirm_key = request.POST.get("confirm_password")
         if not key:
-            usersettings = {"TxtHide":"block","Txt":"请输入新的密码再更改！"}
+            usersettings = {"TxtHide":"block","Txt":"请输入新的密码再更改！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
             return render(request, "usersettings.html", {"usersettings": usersettings,"user_list":user_list})
-        database.users.objects.filter(Account=request.session['Account']).update(password=key)
-        usersettings = {"TxtHide":"block","Txt":"更改完成！请重新登陆！"}
+        if key != confirm_key:
+            usersettings = {"TxtHide":"block","Txt":"两次输入的密码不一致！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
+            return render(request, "usersettings.html", {"usersettings": usersettings,"user_list":user_list})
+        if len(key) < 8:
+            usersettings = {"TxtHide":"block","Txt":"密码长度至少8位！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
+            return render(request, "usersettings.html", {"usersettings": usersettings,"user_list":user_list})
+        if not user_list:
+            auth.logout(request)
+            return redirect('/login/')
+        user_list.set_password(key)
+        usersettings = {"TxtHide":"block","Txt":"更改完成！请重新登陆！", "status2": "success", "status1": "bi-check-circle-fill"}
         OperationLog(
             Account=Account,
             uuid=database.users.objects.get(Account=Account).UniqueIdentification,
@@ -237,7 +249,7 @@ def PermanentlyLogout(request):
         fileids = database.users.objects.filter(Account=request.session['Account'])
         temp = database.users.objects.get(Account=Account)
         fileids.delete()
-        usersettings = {"TxtHide":"block","Txt":"注销帐号完成！"}
+        usersettings = {"TxtHide":"block","Txt":"注销帐号完成！", "status2": "success", "status1": "bi-check-circle-fill"}
         OperationLog(
             Account=Account,
             uuid=temp.UniqueIdentification,
@@ -264,7 +276,9 @@ def Resetuuid(request):
         remaining = (last_reset.operation_time + timedelta(hours=3)) - timezone.now()
         usersettings = {
             "TxtHide": "block",
-            "Txt": f"冷却中，请 {int(remaining.total_seconds())} 秒后再试"
+            "Txt": f"冷却中，请 {int(remaining.total_seconds())} 秒后再试",
+            "status2": "warning",
+            "status1": "bi-exclamation-circle-fill"
         }
         return render(request, "usersettings.html",
                       {"usersettings": usersettings, "user_list": user_list})
@@ -280,7 +294,7 @@ def Resetuuid(request):
             operation_type='Resetuuid',
             description=f'用户 {Account} 重置 UUID 成功'
         )
-    usersettings = {"TxtHide": "block", "Txt": "重置 UUID 完成！"}
+    usersettings = {"TxtHide": "block", "Txt": "重置 UUID 完成！", "status2": "success", "status1": "bi-check-circle-fill"}
     return render(request, "usersettings.html",
                   {"usersettings": usersettings, "user_list": user_list})
 
@@ -299,10 +313,10 @@ def ChangeSignature(request):
     if request.method == "POST":
         Signature = request.POST.get("Signature")
         if not Signature:
-            usersettings = {"TxtHide":"block","Txt":"请输入签名再更改！"}
+            usersettings = {"TxtHide": "block", "Txt": "请输入签名再更改！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
             return render(request, "usersettings.html", {"usersettings": usersettings,"user_list":user_list})
         database.users.objects.filter(Account=request.session['Account']).update(signature=Signature)
-        usersettings = {"TxtHide":"block","Txt":"更改完成！"}
+        usersettings = {"TxtHide": "block", "Txt": "更改完成！", "status2": "success", "status1": "bi-check-circle-fill"}
         OperationLog(
             Account=Account,
             uuid=database.users.objects.get(Account=Account).UniqueIdentification,
@@ -329,14 +343,14 @@ def ChangeAvatar(request):
     if request.method == "POST":
         myFile = request.FILES.get("file", None)
         if not myFile:
-            usersettings = {"TxtHide": "block", "Txt": "请选择头像文件！"}
+            usersettings = {"TxtHide": "block", "Txt": "请选择头像文件！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
             return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user_list})
 
         allowed_extensions = ['jpg', 'png', 'jpeg']
         _, file_extension = os.path.splitext(myFile.name)
         ext = file_extension.lstrip('.').lower()
         if ext not in allowed_extensions:
-            usersettings = {"TxtHide": "block", "Txt": "只能上传jpg,jpeg,png文件！"}
+            usersettings = {"TxtHide": "block", "Txt": "只能上传jpg,jpeg,png文件！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
             return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user_list})
 
         try:
@@ -344,10 +358,10 @@ def ChangeAvatar(request):
             img.verify()
             img = Image.open(myFile)
             if img.format.lower() not in ['jpeg', 'png']:
-                usersettings = {"TxtHide": "block", "Txt": "图片内容格式不正确！"}
+                usersettings = {"TxtHide": "block", "Txt": "图片内容格式不正确！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
                 return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user_list})
         except Exception:
-            usersettings = {"TxtHide": "block", "Txt": "文件内容不是有效图片！"}
+            usersettings = {"TxtHide": "block", "Txt": "文件内容不是有效图片！", "status2": "warning", "status1": "bi-exclamation-circle-fill"}
             return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user_list})
 
         width, height = img.size
@@ -377,10 +391,9 @@ def ChangeAvatar(request):
             description=f'用户 {Account} 更改头像完成'
         )
 
-        usersettings = {"TxtHide": "block", "Txt": "头像上传完成"}
+        usersettings = {"TxtHide": "block", "Txt": "头像上传完成", "status": "success"}
         return render(request, "usersettings.html", {"usersettings": usersettings, "user_list": user_list})
 
-@csrf_exempt
 def logins(request):
     Account = request.session.get('Account')
     try:
@@ -408,8 +421,11 @@ def logins(request):
             user = database.users.objects.get(Account=Account)
             if user.is_banned:
                 login = {"Txt":"账号已被封禁!",'HomePpage':'none','SignUp':'block','REENTRY':'block'}
+                return render(request, "login.html", context={
+                    "user_list":user_list,
+                    "login": login})
 
-            if user.password == password:
+            if user.check_password(password):
                 request.session['Account'] = user.Account
 
                 login = {"Txt":"登陆成功!",'HomePpage':'block','SignUp':'none','REENTRY':'none'}
@@ -446,7 +462,6 @@ def login_api_v3(request):
 
         print(f"[DEBUG] 收到登录请求:")
         print(f"  Account: {Account}")
-        print(f"  password: {password}")
         print(f"  timestamp: {timestamp}")
         print(f"  nonce: {nonce}")
         print(f"  signature: {signature}")
@@ -489,12 +504,10 @@ def login_api_v3(request):
             if user.is_banned:
                 return JsonResponse({'error': '账号被封禁'}, status=403)
             
-            if user.password != password:
+            if not user.check_password(password):
                 return JsonResponse({'error': '密码错误'}, status=401)
 
-            session_token = hashlib.sha256(
-                f"{Account}{nonce}{settings.SECRET_KEY}".encode()
-            ).hexdigest()
+            session_token = database.ApiSessionToken.issue(user)
             
             OperationLog(
                 Account=Account,
@@ -708,10 +721,20 @@ def upload_file_api_v3(request):
                 return JsonResponse({'error': f'上传过于频繁，还需等待 {int(settings.UPLOAD_OPTIME) - int(elapsed)} 秒'}, status=429)
         if file.size > settings.MAX_UPLOAD_SIZE:
             return JsonResponse({'error': f'文件大小超过 {settings.MAX_UPLOAD_SIZE}，拒绝上传'}, status=413)
+        # 文件名安全校验：拒绝路径穿越，文件名随机化防止覆盖
+        original_name = file.name
+        if '..' in original_name or '/' in original_name or '\\' in original_name:
+            return JsonResponse({'error': '文件名非法'}, status=400)
+        base_name = os.path.basename(original_name)
+        if not re.fullmatch(r'[A-Za-z0-9._\-]{1,80}', base_name):
+            return JsonResponse({'error': '文件名包含非法字符'}, status=400)
+        ext = os.path.splitext(base_name)[1].lower()
+        if len(ext) > 16:
+            ext = ''
         upload_dir = "static/uploads"
         os.makedirs(upload_dir, exist_ok=True)
         safe_ts = time_now().strftime('%Y%m%d_%H%M%S')
-        new_name = f"{Account}_{safe_ts}_{file.name}"
+        new_name = f"{Account}_{safe_ts}_{uuid.uuid4().hex[:8]}{ext}"
         dest_path = os.path.join(upload_dir, new_name)
         with open(dest_path, 'wb+') as destination:
             for chunk in file.chunks():
@@ -726,7 +749,7 @@ def upload_file_api_v3(request):
             Account=Account,
             uuid=database.users.objects.get(Account=Account).UniqueIdentification,
             operation_type='upload_file',
-            description=f'用户 {Account} 上传日志文件 {file.name}'
+            description=f'用户 {Account} 上传日志文件 {base_name}'
         )
         return JsonResponse({'message': '文件上传成功'}, status=200)
     else:
@@ -787,20 +810,25 @@ def function_user_api_v3(request):
             return JsonResponse({'error': '操作ID不存在'}, status=404)
         
 
+        try:
+            user = database.users.objects.get(UniqueIdentification=uuids)
+        except database.users.DoesNotExist:
+            return JsonResponse({'error': '用户不存在'}, status=404)
+
+        # 服务端校验会话令牌（数据库仅存哈希），防止伪造
+        if not database.ApiSessionToken.verify(user, session_token):
+            return JsonResponse({'error': '会话令牌无效或已过期'}, status=401)
+
         if not ONLINE_USERS.get(uuids, None):
             return JsonResponse({'error': '用户未在线，操作被拒绝'}, status=409)
 
-        try:
-            user = database.users.objects.get(UniqueIdentification=uuids)
-            if user.is_banned:
-                return JsonResponse({'error': '该用户被封禁'}, status=403)
-            if user.coins + op_type.coins < 0:
-                return JsonResponse({'error': '用户点数不足'}, status=403)
-            
-            user.coins += op_type.coins
-            user.save()
-        except database.users.DoesNotExist:
-            return JsonResponse({'error': '用户不存在'}, status=404)
+        if user.is_banned:
+            return JsonResponse({'error': '该用户被封禁'}, status=403)
+        if user.coins + op_type.coins < 0:
+            return JsonResponse({'error': '用户点数不足'}, status=403)
+        
+        user.coins += op_type.coins
+        user.save()
         
 
         OperationLog(
@@ -834,7 +862,6 @@ def captcha():
 def refresh_captcha(request):
     return HttpResponse(json.dumps(captcha()), content_type='application/json')
 
-@csrf_exempt
 def register(request):
     try:
         if request.session['Account']:
@@ -857,7 +884,7 @@ def register(request):
         captcha_value = request.POST.get('captcha_1')
 
         try:
-            CaptchaStore.objects.get(hashkey=captcha_key, response=captcha_value.lower())
+            CaptchaStore.objects.get(hashkey=captcha_key, response=(captcha_value or '').lower())
         except CaptchaStore.DoesNotExist:
             hashkey = CaptchaStore.generate_key()
             return render(request, "register.html", {
@@ -865,7 +892,8 @@ def register(request):
                 "captcha_error": "验证码错误",
                 "user_list":user_list,
             })
-
+        # 校验成功后立即销毁验证码，防止重复使用
+        CaptchaStore.objects.filter(hashkey=captcha_key).delete()
 
         Account = request.POST.get('Account')
         pwd = request.POST.get('password1')
@@ -873,8 +901,10 @@ def register(request):
         registrationcode = request.POST.get('registrationcode')
         if database.users.objects.filter(Account=Account):
             register = {'Txt':'账号已被注册！','SignIn':'none','SignUp':'block'}
-        elif len(Account) < 6:
+        elif len(Account or '') < 6:
             register = {'Txt':'账号少于6位数！','SignIn':'none','SignUp':'block'}
+        elif len(pwd or '') < 8:
+            register = {'Txt':'密码长度至少8位！','SignIn':'none','SignUp':'block'}
         elif pwd != rePwd:
             register = {'Txt':'两次密码不一致!','SignIn':'none','SignUp':'block'}
             
@@ -888,7 +918,7 @@ def register(request):
             temp_id = str(uuid.uuid4().hex)[:16]
             while database.users.objects.filter(UniqueIdentification=temp_id).exists():
                 temp_id = str(uuid.uuid4().hex)[:16]
-            user = database.users.objects.create(Account=Account, password=rePwd, UniqueIdentification=temp_id,date_joined=timezone.now())
+            user = database.users.objects.create(Account=Account, password=make_password(rePwd), UniqueIdentification=temp_id,date_joined=timezone.now())
             user.save()
             database.registrationcode.objects.filter(codes=registrationcode).update(user=Account,is_used=True,used_time=datetime.now())
             register = { 'Txt': '注册完成！','SignIn': 'block', 'SignUp': 'none'}

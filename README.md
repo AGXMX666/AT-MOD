@@ -76,6 +76,16 @@ AT登录接口平台是一个基于Django开发的用户登录与管理系统，
     ```bash
    daphne -b 0.0.0.0 -p 8000 AT.asgi:application
     ```
+
+9. **环境变量配置（可选，生产环境推荐）**
+   - `DJANGO_SECRET_KEY`：Django 密钥，生产环境务必设置。
+   - `API_SECRET_KEY`：API 签名共享密钥，需与客户端保持一致，建议与 `DJANGO_SECRET_KEY` 分开设置。
+   - `DJANGO_DEBUG`：设为 `False` 关闭调试模式（Windows 下双击 `start.bat` 已默认关闭）。
+   - `DJANGO_SESSION_COOKIE_SECURE` / `DJANGO_CSRF_COOKIE_SECURE`：Cookie 的 Secure 标记开关，本地用 http 访问时设为 `False`，否则无法登录。
+
+10. **关于静态资源与关闭 DEBUG**
+    - 项目内置静态文件服务，关闭 `DEBUG` 后前端页面（css/js/img）与运行时上传文件（头像、日志）仍可正常访问，无需 nginx。
+    - 后台管理界面（admin/SimpleUI）的样式文件需先执行 `python manage.py collectstatic` 收集到 `resources/` 目录后才能显示。
     
 ## 推荐使用虚拟环境（venv）部署
 
@@ -119,6 +129,24 @@ AT登录接口平台是一个基于Django开发的用户登录与管理系统，
 - 后台管理界面
 
 ## 更新日志
+
+- **2026-08-23**
+   - **功能性修复**：
+      - 修复登录接口封禁检查失效问题：被封禁账号此前仍可通过正确密码登录，现已拦截。
+      - 修复注册码导入导出字段与模型不匹配的问题。
+      - 修复 `manage.py` 中异常捕获拼写错误，Django 未安装时能给出正确提示。
+   - **安全增强**：
+      - 用户密码改为哈希存储（PBKDF2），旧明文密码在首次登录成功后自动升级。
+      - 注册与修改密码强制校验密码长度（至少 8 位），修改密码增加服务端二次确认。
+      - 新增 API 会话令牌模型（`ApiSessionToken`）：令牌仅存哈希、带过期时间，服务端真实校验，杜绝伪造。
+      - 文件上传增加文件名安全校验：拒绝路径穿越与非法字符，落盘文件名随机化防止覆盖。
+      - 网页登录与注册移除 CSRF 豁免，图形验证码校验后立即销毁。
+      - `SECRET_KEY` 与 API 签名密钥支持环境变量注入，`DEBUG` 由环境变量控制，登录日志不再输出明文密码。
+   - **部署改进**：
+      - 新增独立静态文件服务：关闭 `DEBUG` 后前端与后台静态资源不再丢失。
+      - `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE` 支持环境变量覆盖，本地 http 环境关闭 DEBUG 也能正常登录。
+      - `start.bat` 默认以关闭 DEBUG 模式启动。
+
 - **2026-07-10**
    - **移除冗余功能**：删除了产品列表（product list）相关模块，精简系统架构，降低维护成本。
    - **新增功能**：增加客户端获取头像 API（`GetAvatar_api_v3`），支持通过 `uuid` 获取用户头像，返回 Base64 格式数据。

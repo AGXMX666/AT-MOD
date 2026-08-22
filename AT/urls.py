@@ -1,9 +1,28 @@
+import os
+import mimetypes
 from django.contrib import admin
 from django.urls import path, re_path, include
 from . import views as main
 from django.conf import settings
-from django.views.static import serve
-from django.conf.urls.static import static
+from django.http import FileResponse, HttpResponseNotFound
+
+
+def safe_static_serve(request, path, document_roots):
+    """静态文件服务视图：不受 DEBUG 开关限制，按顺序在多个根目录中查找"""
+    for root in document_roots:
+        root = os.path.abspath(root)
+        full_path = os.path.normpath(os.path.join(root, path.replace('\\', '/')))
+        if not full_path.startswith(os.path.normpath(root) + os.sep):
+            continue
+        if os.path.isfile(full_path):
+            content_type, _ = mimetypes.guess_type(full_path)
+            response = FileResponse(
+                open(full_path, 'rb'),
+                content_type=content_type or 'application/octet-stream',
+            )
+            response['X-Content-Type-Options'] = 'nosniff'
+            return response
+    return HttpResponseNotFound('File not found')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,7 +52,17 @@ urlpatterns = [
     path('Download/', main.Download),
 
 
-]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
 
-urlpatterns +=[re_path(r'^static/admin/(.*)$', serve,
-        {'document_root': settings.STATIC_ADMIN}, name='static_admin'),]
+# 静态文件服务：无论 DEBUG 开关均可使用
+# 查找顺序：先 STATIC_ROOT（collectstatic 收集产物，含 admin/simpleui），
+# 再 static/ 源目录（css/js/img 及运行时上传的 avatar/uploads）
+STATIC_ROOTS = [settings.STATIC_ROOT] + settings.STATICFILES_DIRS
+
+urlpatterns += [
+    re_path(r'^static/admin/(?P<path>.*)$', safe_static_serve,
+            {'document_roots': [settings.STATIC_ADMIN] + STATIC_ROOTS},
+            name='static_admin'),
+    re_path(r'^static/(?P<path>.*)$', safe_static_serve,
+            {'document_roots': STATIC_ROOTS}, name='static_files'),
+]
