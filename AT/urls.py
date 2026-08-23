@@ -20,12 +20,18 @@ def safe_static_serve(request, path, document_roots):
 
     # 兜底：使用 Django 静态文件查找器定位应用包内的静态目录
     # （如 SimpleUI 的 /static/admin/simpleui-x/，无需 collectstatic）
-    try:
-        found = finders.find(path)
-    except Exception:
-        found = None
-    if found:
-        candidates.append(os.path.abspath(found))
+    # 注意：路由已吃掉 static/admin/ 前缀，查找器需要完整相对路径，故补回 admin/ 再试
+    finder_candidates = [path]
+    if not path.startswith('admin/'):
+        finder_candidates.append('admin/' + path)
+    for candidate_path in finder_candidates:
+        try:
+            found = finders.find(candidate_path)
+        except Exception:
+            found = None
+        if found:
+            candidates.append(os.path.abspath(found))
+            break
 
     for full_path in candidates:
         if os.path.isfile(full_path):
