@@ -688,7 +688,7 @@ def upload_file_api_v3(request):
     if request.method == 'POST':
         file = request.FILES.get('file')
         Account = request.POST.get("Account")
-        uuid = request.POST.get("uuid")
+        client_uuid = request.POST.get("uuid")
         print(Account)
         if not Account:
             return JsonResponse({'error': '未登录'}, status=403)
@@ -698,14 +698,14 @@ def upload_file_api_v3(request):
             except database.users.DoesNotExist:
                 return JsonResponse({'error': '未找到用户'}, status=403)
             
-        if not uuid:
+        if not client_uuid:
             return JsonResponse({'error': 'uuid为空'}, status=400)
         else:
-            if database.users.objects.get(Account=Account).UniqueIdentification == uuid:
+            if database.users.objects.get(Account=Account).UniqueIdentification == client_uuid:
                 pass
             else:
                 return JsonResponse({'error': 'uuid不匹配'}, status=403)
-            if ONLINE_USERS.get(uuid, None):
+            if ONLINE_USERS.get(client_uuid, None):
                 pass
             else:
                 return JsonResponse({'error': '客户端不在线'}, status=403)

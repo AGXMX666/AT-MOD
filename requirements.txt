@@ -9,7 +9,7 @@ Pillow>=11.0
 tzdata
 pytz
 requests
-websocket
+websocket-client
 tqdm
 urllib3
 pycryptodome
